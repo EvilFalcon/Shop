@@ -5,8 +5,6 @@ namespace Shop
 {
     internal class Program
     {
-
-
         static void Main(string[] args)
         {
             Shop _shop = new Shop();
