@@ -42,8 +42,6 @@ namespace Shop
             const string CommandLookInventory = "2";
             const string CommandExitProgram = "3";
 
-            
-
             _player = player;
 
             bool isWork = true;
@@ -78,18 +76,21 @@ namespace Shop
 
         public void Trade()
         {
-            if (_seller.TryGetProduct(out Product product) == false)
+            Product product1;
+
+            if (_seller.TryGetProduct(out product1) == false)
             {
                 return;
             }
 
-            if (_player.CanPay(product.Price) == false)
+            if (_player.CanPay(product1.Price) == false)
             {
+                Console.WriteLine("У вас не хватает денег для этого продукта  ");
                 return;
             }
 
-            _player.Buy(product);
-            _seller.Sell(product);
+            _player.Buy(product1);
+            _seller.Sell(product1);
         }
 
         private List<Product> CreateProduct()
