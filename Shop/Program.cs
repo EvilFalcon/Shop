@@ -13,9 +13,9 @@ namespace Shop
         static void Main(string[] args)
         {
             Shop _shop = new Shop();
-            Player _player = new Player();
+            Player player = new Player();
 
-            _shop.Work(_player);
+            _shop.Work(player);
         }
     }
 
@@ -29,29 +29,16 @@ namespace Shop
 
         public string Name { get; private set; }
         public int Price { get; private set; }
-
-        public void PriceChange(int price)
-        {
-            int newPrice = price / 2;
-            Price = newPrice;
-
-        }
-
-        public void ShowInfo()
-        {
-            Console.WriteLine($" название товара: {Name}, стоимость товара : {Price} ");
-        }
     }
 
     class Shop
     {
-        Salesperson _salesperson = new Salesperson();
-
-        private List<Product> _products = new List<Product>();
+        private Salesperson _seller;
+        Player _player;
 
         public Shop()
         {
-            CreateProduct(_salesperson);
+            _seller = new Salesperson(CreateProduct());
         }
 
         public void Work(Player player)
@@ -60,140 +47,145 @@ namespace Shop
             const string CommandLookInventory = "2";
             const string CommandExitProgram = "3";
 
+            
+
+            _player = player;
+
             bool isWork = true;
 
             while (isWork)
             {
+                Console.WriteLine($"{CommandBuyItem} купить предмет");
+                Console.WriteLine($"{CommandLookInventory} посмотреть свою сумку");
+                Console.WriteLine($"{CommandExitProgram} выход программы\n\n\n");
 
+                _seller.ShowInfo();
 
                 switch (Console.ReadLine())
                 {
                     case CommandBuyItem:
-
+                        Trade();
                         break;
 
                     case CommandLookInventory:
-
+                        _player.ShowInfo();
                         break;
 
                     case CommandExitProgram:
                         isWork = false;
                         break;
                 }
+
+                Console.ReadKey();
+                Console.Clear();
             }
         }
 
-        private void TryGetP()
+        public void Trade()
         {
-            Console.WriteLine();
-
-        }
-
-        private int ReadInt()
-        {
-            int number;
-
-            while (int.TryParse(Console.ReadLine(), out number) == false)
+            if (_seller.TryGetProduct(out Product product) == false)
             {
-                Console.WriteLine("ошибка ввода");
+                return;
             }
 
-            return number;
+            if (_player.CanPay(product.Price) == false)
+            {
+                return;
+            }
+
+            _player.Buy(product);
+            _seller.Sell(product);
         }
 
-        private void CreateProduct(Person person)
+        private List<Product> CreateProduct()
         {
-            List<string> name = new List<string>() { "меч", "щит", "кожаный доспех", "кольчуга", "латы", "кожаный шлем", "латный шлем", "кожаные перчатки", "латные перчатки" };
-            List<int> price = new List<int>() { 500, 250, 100, 500, 1000, 50, 400, 40, 350 };
-
-            for (int i = 0; i < name.Count; i++)
+            List<Product> products = new List<Product>()
             {
-                Product product = new Product(name[i], price[i]);
-                person.TakeItem(product);
-            }
+                new Product("меч",500),
+                new Product("щит",250),
+                new Product("кожаный доспех",100),
+                new Product("кольчуга",500),
+                new Product("латы",1000),
+                new Product("кожаный шлем",50),
+                new Product("латный шлем",400),
+                new Product("кожаные перчатки",40),
+                new Product("латные перчатки",350)
+            };
+
+            return products;
         }
     }
 
     abstract class Person
     {
-        private int _money = 9000;
-        private List<Product> _products = new List<Product>();
+        protected int Money = 9000;
+        protected List<Product> Products = new List<Product>();
 
-        public int Money => _money;
-
-        public int  ProductCount => _products.Count;
+        public int ProductCount => Products.Count;
 
         public void ShowInfo()
         {
-            Console.WriteLine($"У продавца {_money} золота");
-        }
-
-        public void GetMoney(int price)
-        {
-            _money += price;
-        }
-
-        public void GetItem(Product product, int price)
-        {
-            _money -= price;
-            product.PriceChange(product.Price);
-            _products.Add(product);
-        }
-
-        private Product GiveItem(int item)
-        {
-            if (_products.Count > 0)
+            if (ProductCount > 0)
             {
-                Product product = _products[item];
-                _products.Remove(product);
-                return product;
-            }
-            else
-            {
-                Console.WriteLine("У продавца  нет предметов для продажи");
-            }
+                int index = 1;
 
-            return null;
-        }
-
-        public void TakeItem(Product product)
-        {
-            _products.Add(product);
-        }
-
-        public void LookInventory()
-        {
-            if (_products.Count > 0)
-            {
-                foreach (Product product in _products)
+                foreach (Product product in Products)
                 {
-                    product.ShowInfo();
+                    Console.WriteLine($"|Номер: {index}|Название : {product.Name}|Цена : {product.Price}|");
+                    index++;
                 }
             }
             else
             {
-                Console.WriteLine("Ваш инвентарь пуст");
+                Console.WriteLine("сумка пуста");
             }
         }
     }
 
     class Player : Person
     {
+        public void Buy(Product product)
+        {
+            Money -= product.Price;
+            Products.Add(product);
+        }
 
+        public bool CanPay(int price)
+        {
+            return Money >= price;
+        }
     }
 
     class Salesperson : Person
     {
-       
+        public Salesperson(List<Product> products)
+        {
+            Products = products;
+        }
 
-        public bool TryGetProduct(Product product)
+        public bool TryGetProduct(out Product product)
         {
             Console.WriteLine("Введите номер товара ");
             int.TryParse(Console.ReadLine(), out int number);
 
-            if (number>0&&number<=ProductCount)
+            if (number > 0 && number <= ProductCount)
+            {
+                product = Products[number - 1];
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("такого продукта нет ");
+                product = null;
+                return false;
+            }
         }
-       
+
+        public void Sell(Product product)
+        {
+            Money += product.Price;
+            Products.Remove(product);
+        }
     }
 }
 
